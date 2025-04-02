@@ -1,0 +1,306 @@
+---
+title: "Visualization Layers"
+output: html_document
+date: "2025-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, paged.print = FALSE)
+```
+
+# Layers
+
+```{r}
+library(tidyverse)
+```
+
+## Aesthetic mappings
+
+-   color
+-   shape
+-   size
+-   alpha
+
+```{r}
+mpg
+```
+
+-   `displ`: A car’s engine size, in liters. A numerical variable.
+-   `hwy`: A car’s fuel efficiency on the highway, in miles per gallon (mpg). A car with a low fuel efficiency consumes more fuel than a car with a high fuel efficiency when they travel the same distance. A numerical variable.
+-   `class`: Type of car. A categorical variable.
+
+> Visualize the relationship between `displ` and `hwy` for various `class`es of cars.
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy, color = class)) +
+  geom_point()
+```
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy, shape = class)) +
+  geom_point()
+```
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy, size = class)) +
+  geom_point()
+```
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy, alpha = class)) +
+  geom_point()
+```
+
+### Arguments to geom
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point(color = "blue")
+```
+
+## Geometric Objects
+
+```{r}
+library(patchwork)
+l <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point()
+r <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_smooth()
+l + r
+```
+
+> invalid arguments are silently ignored
+
+```{r}
+l <- ggplot(mpg, aes(x = displ, y = hwy, shape = drv)) +
+  geom_smooth()
+r <- ggplot(mpg, aes(x = displ, y = hwy, linetype = drv)) +
+  geom_smooth()
+l + r
+```
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy, color = drv)) + 
+  geom_point() +
+  geom_smooth(aes(linetype = drv))
+```
+
+> using `group` does not provide a legend, and is not usually used because ggplot2 automatically groups data
+
+```{r}
+l <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_smooth()
+
+m <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_smooth(aes(group = drv))
+
+r <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_smooth(aes(color = drv), show.legend = FALSE)
+
+l + m + r
+```
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) + 
+  geom_point(aes(color = class)) + 
+  geom_smooth()
+```
+
+### Different data per layer
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_point(
+    data = mpg |> filter(class == "2seater"),
+    color = "red"
+  ) +
+  geom_point(
+    data = mpg |> filter(class == "2seater"),
+    shape = "circle open", size = 3, color = "red"
+  )
+```
+
+The histogram and density plot below reveal that the distribution of
+highway mileage is bimodal and right skewed while the boxplot reveals
+two potential outliers.
+
+```{r}
+l <- ggplot(mpg, aes(x = hwy)) +
+  geom_histogram(binwidth = 2)
+
+m <- ggplot(mpg, aes(x = hwy)) +
+  geom_density()
+
+r <- ggplot(mpg, aes(x = hwy)) +
+  geom_boxplot()
+
+l + m + r
+```
+
+### Ridgeline plots
+
+```{r}
+library(ggridges)
+```
+
+```{r}
+ggplot(mpg, aes(x = hwy, y = drv, fill = drv, color = drv)) +
+  geom_density_ridges(alpha = 0.5, show.legend = FALSE)
+```
+
+## Facets
+
+### One variable
+
+> `facet_wrap()`
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_wrap(~cyl)
+```
+
+### Two variables
+
+> `facet_grid()`
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_grid(drv ~ cyl)
+```
+
+> Freeing the scales
+
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy)) + 
+  geom_point() + 
+  facet_grid(drv ~ cyl, scales = "free")
+```
+
+## Statistical transformations
+
+```{r}
+names(diamonds)
+```
+
+```{r}
+ggplot(diamonds, aes(x = cut)) +
+  geom_bar()
+```
+
+### Overriding default stats
+
+Each geom has a default stat, ie. count for `geom_bar They can be overriden`
+
+> using "identity"
+
+```{r}
+diamonds |> 
+  count(cut) |> 
+  ggplot(aes(x = cut, y = n)) +
+  geom_bar(stat = "identity")
+```
+
+### Chart of proportions
+
+```{r}
+ggplot(diamonds, aes(x = cut, y = after_stat(prop), group = 1)) +
+  geom_bar()
+```
+
+### Draw attention to summary
+
+```{r}
+diamonds |> ggplot() +
+  stat_summary(
+    aes(x = cut, y = depth),
+    fun.min = min,
+    fun.max = max,
+    fun = median
+  )
+```
+
+## Position adjustments
+
+```{r}
+l <- ggplot(mpg, aes(x = drv, color = drv)) + 
+  geom_bar()
+
+r <- ggplot(mpg, aes(x = drv, fill = drv)) + 
+  geom_bar()
+l + r
+```
+
+### Stacking
+
+```{r}
+ggplot(mpg, aes(x = drv, fill = class)) +
+  geom_bar()
+```
+
+### Position Identity
+
+```{r}
+l <- ggplot(mpg, aes(x = drv, fill = class)) +
+  geom_bar(alpha = 1/5, position = "identity")
+
+r <- ggplot(mpg, aes(x = drv, color = class)) +
+  geom_bar(fill = NA, position = "identity")
+
+l+r
+```
+
+### Fill and Dodge Positions
+
+```{r}
+l <- ggplot(mpg, aes(x = drv, fill = class)) + 
+  geom_bar(position = "fill")
+r <- ggplot(mpg, aes(x = drv, fill = class)) + 
+  geom_bar(position = "dodge")
+l + r
+```
+
+### Jitter
+
+```{r}
+l <- ggplot(mpg, aes(x = displ, y = hwy)) + 
+  geom_point()
+r <- ggplot(mpg, aes(x = displ, y = hwy)) + 
+  geom_point(position = "jitter")
+l + r
+```
+
+## Coordinate systems
+
+```{r}
+nz <- map_data("nz")
+glimpse(nz)
+```
+
+> Use `coord_quickmap()` to correct aspect ratio
+
+```{r}
+l <- ggplot(nz, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "white", color = "black")
+r <- ggplot(nz, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "white", color = "black") +
+  coord_quickmap()
+l + r
+```
+
+> use `coord_polar()` for polar coordinates
+
+```{r}
+bar <- ggplot(data = diamonds) +
+  geom_bar(
+    aes(x = clarity, fill = clarity),
+    show.legend = FALSE,
+    width = 1
+  ) +
+  theme(aspect.ratio = 1)
+l <- bar + coord_flip()
+r <- bar + coord_polar()
+l + r
+```
