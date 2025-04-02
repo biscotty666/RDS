@@ -1,4 +1,6 @@
 .Rproj*
+.Rhistory
 .direnv
 .envrc
 *Rproj
+.Rproj.user
